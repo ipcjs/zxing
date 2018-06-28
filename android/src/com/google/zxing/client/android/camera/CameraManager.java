@@ -68,7 +68,7 @@ public final class CameraManager {
     this.configManager = new CameraConfigurationManager(context);
     previewCallback = new PreviewCallback(configManager);
   }
-  
+
   /**
    * Opens the camera driver and initializes the hardware parameters.
    *
@@ -231,7 +231,7 @@ public final class CameraManager {
     }
     return framingRect;
   }
-  
+
   private static int findDesiredDimensionInRange(int resolution, int hardMin, int hardMax) {
     int dim = 5 * resolution / 8; // Target 5/8 of each dimension
     if (dim < hardMin) {
@@ -262,16 +262,25 @@ public final class CameraManager {
         // Called early, before init even finished
         return null;
       }
-      rect.left = rect.left * cameraResolution.x / screenResolution.x;
-      rect.right = rect.right * cameraResolution.x / screenResolution.x;
-      rect.top = rect.top * cameraResolution.y / screenResolution.y;
-      rect.bottom = rect.bottom * cameraResolution.y / screenResolution.y;
+      if (screenResolution.x >= screenResolution.y) {
+        rect.left = rect.left * cameraResolution.x / screenResolution.x;
+        rect.top = rect.top * cameraResolution.y / screenResolution.y;
+        rect.right = rect.right * cameraResolution.x / screenResolution.x;
+        rect.bottom = rect.bottom * cameraResolution.y / screenResolution.y;
+      } else {
+        rect.left = framingRect.top * cameraResolution.x / screenResolution.y;
+        rect.top = (screenResolution.x - framingRect.right) * cameraResolution.y / screenResolution.x;
+        rect.right = framingRect.bottom * cameraResolution.x / screenResolution.y;
+        rect.bottom = (screenResolution.x - framingRect.left) * cameraResolution.y / screenResolution.x;
+      }
       framingRectInPreview = rect;
+      // framingRectInPreview = new Rect(0, 0, cameraResolution.x, cameraResolution.y);
+      Log.d(TAG, "Calculated framing rect in preview: " + framingRectInPreview);
     }
     return framingRectInPreview;
   }
 
-  
+
   /**
    * Allows third party apps to specify the camera ID, rather than determine
    * it automatically based on available cameras and their orientation.
@@ -281,7 +290,7 @@ public final class CameraManager {
   public synchronized void setManualCameraId(int cameraId) {
     requestedCameraId = cameraId;
   }
-  
+
   /**
    * Allows third party apps to specify the scanning rectangle dimensions, rather than determine
    * them automatically based on screen resolution.
